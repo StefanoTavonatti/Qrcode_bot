@@ -23,6 +23,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
     private ThreadPoolExecutor executor;
 
     public QrCodeBot(){
+        super();
         loadConfiguration();
 
         initializeExecutor();
