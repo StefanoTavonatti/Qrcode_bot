@@ -49,8 +49,36 @@ public class UpdateTask implements Runnable {
                 logger.info(update.getMessage().getText());
             }
 
+            String[] splits=update.getMessage().getText().split(" ");
 
-            message.setText(update.getMessage().getText());
+            String[] commandSplit=splits[0].split("@");
+
+            if(commandSplit.length>1){
+                if(!commandSplit[1].equals(qrCodeBot.getBotUsername())){
+                    return;
+                }
+            }
+
+            switch (commandSplit[0]){
+                case "/encode":
+                    if(splits.length<2){
+                        message.setText("use:\n/encode <text>");
+                        break;
+                    }
+
+                    String text="";
+
+                    //i=1 in order to skyp the encode command
+                    for(int i=1;i<splits.length;i++){
+                        if(i!=1){
+                            text+=" ";
+                        }
+                        text+=splits[i];
+                    }
+
+                    message.setText(text);
+                    break;
+            }
 
             qrCodeBot.sendResponse(message);
         }
