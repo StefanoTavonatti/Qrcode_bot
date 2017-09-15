@@ -69,6 +69,13 @@ public class UpdateTask implements Runnable {
             }
 
             switch (commandSplit[0]){
+                case "/help":
+                    String helpText="/encode <text>: encode the <text> inside a QRCode\n"+
+                            "send a photo with a QrCode in order to decode it.";
+
+                    message.setText(helpText);
+                    qrCodeBot.sendResponse(message);
+                    break;
                 case "/encode":
                     if(splits.length<2){
                         message.setText("use:\n/encode <text>");
@@ -127,9 +134,11 @@ public class UpdateTask implements Runnable {
 
                 default:
                     message.setText("Type /help for the list of available commands");
+                    qrCodeBot.sendResponse(message);
+                    break;
             }
 
-            qrCodeBot.sendResponse(message);
+
         }
         else if(update.hasMessage() && update.getMessage().hasPhoto()){
             List<PhotoSize> photoSizes=update.getMessage().getPhoto();
