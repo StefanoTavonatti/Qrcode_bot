@@ -79,6 +79,7 @@ public class UpdateTask implements Runnable {
                 case "/encode":
                     if(splits.length<2){
                         message.setText("use:\n/encode <text>");
+                        qrCodeBot.sendResponse(message);
                         break;
                     }
 
