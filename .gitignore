@@ -15,3 +15,5 @@ bot_config.properties
 *.log
 
 .directory
+
+download.jpg
