@@ -1,5 +1,9 @@
 package tavonatti.stefano.bots.qrcodebot.tasks;
 
+import com.google.zxing.*;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -9,16 +13,16 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.imageio.ImageIO;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UpdateTask implements Runnable {
 
@@ -89,24 +93,59 @@ public class UpdateTask implements Runnable {
             logger.info("file url: "+file.getFileUrl(qrCodeBot.getBotToken()));
             logger.info(file.toString());
 
+            InputStream is=null;
+
             try {
-                downloadFile(file);
+                is=getFileInputStream(file);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
+                sendErrorMessage("Unable to download file");
+                return;
             } catch (IOException e) {
                 e.printStackTrace();
+                sendErrorMessage("Unable to download file");
+                return;
             }
 
+            Map hintMap = new HashMap();
+            hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+
+            SendMessage message=new SendMessage();
+            message.setChatId(update.getMessage().getChatId());
+
+            try {
+                message.setText(readQRCode(is,hintMap));
+            } catch (IOException e) {
+                e.printStackTrace();
+                sendErrorMessage("Unable to download file");
+                return;
+            } catch (NotFoundException e) {
+                logger.error("No qrcode");
+                sendErrorMessage("Unable to find a QRcode in the image");
+                return;
+            }
+
+            qrCodeBot.sendResponse(message);
 
         }
 
     }
 
-    private void downloadFile(File file) throws IOException {
+    private InputStream getFileInputStream(File file) throws IOException {
         URL url=new URL(file.getFileUrl(qrCodeBot.getBotToken()));
         InputStream is=url.openStream();
 
-        Files.copy(is,Paths.get("doanload.jpg"));
+        //Files.copy(is,Paths.get("download.jpg"));
+        return is;
+    }
+
+    public static String readQRCode(InputStream is, Map hintMap) throws FileNotFoundException, IOException, NotFoundException {
+        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(
+                new BufferedImageLuminanceSource(
+                        ImageIO.read(is))));
+        Result qrCodeResult = new MultiFormatReader().decode(binaryBitmap,
+                hintMap);
+        return qrCodeResult.getText();
     }
 
     private void sendErrorMessage(String text) {
