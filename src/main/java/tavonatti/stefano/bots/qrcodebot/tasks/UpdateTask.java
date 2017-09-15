@@ -78,6 +78,9 @@ public class UpdateTask implements Runnable {
 
                     message.setText(text);
                     break;
+
+                default:
+                    message.setText("Type /help for the list of available commands");
             }
 
             qrCodeBot.sendResponse(message);
