@@ -1,0 +1,17 @@
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Maven
+log/
+target/
+/.project
+
+#Bot configuration
+bot_config.properties
+
+#log files
+*.log
+
+.directory
