@@ -9,40 +9,41 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@NamedQuery(name = "Chat.findAll",query = "SELECT c FROM Chat c")
-public class Chat implements Serializable{
+@NamedQuery(name = "ChatEntity.findAll",query = "SELECT c FROM ChatEntity c")
+@Table(name = "chats")
+public class ChatEntity implements Serializable{
 
     @Id
     @Column(name = "chat_id")
-    private String chatId;
+    private long chatId;
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     private Set<User> users;
 
     @Column(name = "number_of_uses")
-    private long numberOfUses;
+    private Long numberOfUses;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_use")
     private Date lasUse;
 
-    public static Chat getById(String id){
+    public static ChatEntity getById(long id){
         EntityManager em= QRCodeBotDao.instance.createEntityManager();
-        Chat chat=em.find(Chat.class,id);
+        ChatEntity chatEntity =em.find(ChatEntity.class,id);
         QRCodeBotDao.instance.closeConnections(em);
 
-        return chat;
+        return chatEntity;
     }
 
-    public static List<Chat> getAll(){
+    public static List<ChatEntity> getAll(){
         EntityManager em=QRCodeBotDao.instance.createEntityManager();
-        List<Chat> chats=em.createNamedQuery("Chat.findAll").getResultList();
+        List<ChatEntity> chatEntities =em.createNamedQuery("ChatEntity.findAll").getResultList();
         QRCodeBotDao.instance.closeConnections(em);
 
-        return chats;
+        return chatEntities;
     }
 
-    public static Chat saveChat(Chat c){
+    public static ChatEntity saveChat(ChatEntity c){
         EntityManager em=QRCodeBotDao.instance.createEntityManager();
         EntityTransaction tx=em.getTransaction();
         tx.begin();
@@ -53,11 +54,11 @@ public class Chat implements Serializable{
         return c;
     }
 
-    public String getChatId() {
+    public long getChatId() {
         return chatId;
     }
 
-    public void setChatId(String chatId) {
+    public void setChatId(long chatId) {
         this.chatId = chatId;
     }
 
@@ -69,11 +70,11 @@ public class Chat implements Serializable{
         this.users = users;
     }
 
-    public long getNumberOfUses() {
+    public Long getNumberOfUses() {
         return numberOfUses;
     }
 
-    public void setNumberOfUses(long numberOfUses) {
+    public void setNumberOfUses(Long numberOfUses) {
         this.numberOfUses = numberOfUses;
     }
 

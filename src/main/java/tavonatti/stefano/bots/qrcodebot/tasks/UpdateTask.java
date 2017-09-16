@@ -16,6 +16,8 @@ import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
+import tavonatti.stefano.bots.qrcodebot.entities.ChatEntity;
+import tavonatti.stefano.bots.qrcodebot.entities.User;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -24,10 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UpdateTask implements Runnable {
 
@@ -36,6 +35,7 @@ public class UpdateTask implements Runnable {
     private final static String CHARSET="UTF-8"; // or "ISO-8859-1"
     private final static int WIDTH_QR=500;
     private final static int HEIGHT_QR=500;
+    private final static long MAX_USE_NUM=9223372036854775000L;
 
     private QrCodeBot qrCodeBot;
     private Update update;
@@ -57,6 +57,8 @@ public class UpdateTask implements Runnable {
                 logger.info("message id:"+update.getMessage().getMessageId());
                 logger.info(update.getMessage().getText());
             }
+
+            updateChatAndUserInformation();
 
             String[] splits=update.getMessage().getText().split(" ");
 
@@ -148,6 +150,8 @@ public class UpdateTask implements Runnable {
             logger.info("user id:"+update.getMessage().getFrom().getId());
             logger.info("photo");
 
+            updateChatAndUserInformation();
+
             if(photoSizes.size()<=0){
 
                 String text="Unable to receive the file";
@@ -215,6 +219,48 @@ public class UpdateTask implements Runnable {
 
         }
 
+    }
+
+    private void updateChatAndUserInformation() {
+
+        if(!qrCodeBot.dbLoggingEnabled())
+            return;
+
+        ChatEntity c=ChatEntity.getById(update.getMessage().getChatId());
+
+        if(c==null){
+            c=new ChatEntity();
+            c.setChatId(update.getMessage().getChatId());
+        }
+
+        c.setLasUse(new Date(System.currentTimeMillis()));
+
+        if(c.getNumberOfUses()==null){
+            c.setNumberOfUses(0L);
+        }
+
+        if(c.getNumberOfUses()<MAX_USE_NUM)
+            c.setNumberOfUses(c.getNumberOfUses()+1);
+
+        User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+
+        if(u==null){
+            u=new User();
+            u.setUserId(Long.valueOf(update.getMessage().getFrom().getId()));
+        }
+
+        u.setUsername(update.getMessage().getFrom().getUserName());
+
+        u=User.saveUser(u);
+
+        if(c.getUsers()==null){
+            c.setUsers(new HashSet<>());
+        }
+
+        c.getUsers().add(u);
+
+        u=User.saveUser(u);
+        c=ChatEntity.saveChat(c);
     }
 
     private Map getHintMap() {
