@@ -218,19 +218,27 @@ public class UpdateTask implements Runnable {
             qrCodeBot.sendResponse(message);
 
         }
+        else if(update.hasInlineQuery()){
+
+        }
 
     }
 
-    private void updateChatAndUserInformation() {
+    private void updateChatAndUserInformation(){
+        updateChatAndUserInformation(update.getMessage().getChatId(),Long.valueOf(update.getMessage().getFrom().getId()),
+                update.getMessage().getFrom().getUserName());
+    }
+
+    private void updateChatAndUserInformation(Long chatId,Long userId,String username) {
 
         if(!qrCodeBot.dbLoggingEnabled())
             return;
 
-        ChatEntity c=ChatEntity.getById(update.getMessage().getChatId());
+        ChatEntity c=ChatEntity.getById(chatId);
 
         if(c==null){
             c=new ChatEntity();
-            c.setChatId(update.getMessage().getChatId());
+            c.setChatId(chatId);
         }
 
         c.setLasUse(new Date(System.currentTimeMillis()));
@@ -242,14 +250,14 @@ public class UpdateTask implements Runnable {
         if(c.getNumberOfUses()<MAX_USE_NUM)
             c.setNumberOfUses(c.getNumberOfUses()+1);
 
-        User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+        User u=User.getById(userId);
 
         if(u==null){
             u=new User();
-            u.setUserId(Long.valueOf(update.getMessage().getFrom().getId()));
+            u.setUserId(userId);
         }
 
-        u.setUsername(update.getMessage().getFrom().getUserName());
+        u.setUsername(username);
 
         u=User.saveUser(u);
 
