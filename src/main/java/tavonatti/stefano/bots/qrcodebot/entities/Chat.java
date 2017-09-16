@@ -1,11 +1,15 @@
 package tavonatti.stefano.bots.qrcodebot.entities;
 
+import tavonatti.stefano.bots.qrcodebot.entities.dao.QRCodeBotDao;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Entity
+@NamedQuery(name = "Chat.findAll",query = "SELECT c FROM Chat c")
 public class Chat implements Serializable{
 
     @Id
@@ -21,6 +25,33 @@ public class Chat implements Serializable{
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "last_use")
     private Date lasUse;
+
+    public static Chat getById(String id){
+        EntityManager em= QRCodeBotDao.instance.createEntityManager();
+        Chat chat=em.find(Chat.class,id);
+        QRCodeBotDao.instance.closeConnections(em);
+
+        return chat;
+    }
+
+    public static List<Chat> getAll(){
+        EntityManager em=QRCodeBotDao.instance.createEntityManager();
+        List<Chat> chats=em.createNamedQuery("Chat.findAll").getResultList();
+        QRCodeBotDao.instance.closeConnections(em);
+
+        return chats;
+    }
+
+    public static Chat saveChat(Chat c){
+        EntityManager em=QRCodeBotDao.instance.createEntityManager();
+        EntityTransaction tx=em.getTransaction();
+        tx.begin();
+        c=em.merge(c);
+        tx.commit();
+        QRCodeBotDao.instance.closeConnections(em);
+
+        return c;
+    }
 
     public String getChatId() {
         return chatId;
