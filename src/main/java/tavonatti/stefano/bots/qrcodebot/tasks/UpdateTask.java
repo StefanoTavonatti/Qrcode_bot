@@ -14,6 +14,7 @@ import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
 import tavonatti.stefano.bots.qrcodebot.entities.ChatEntity;
@@ -219,6 +220,14 @@ public class UpdateTask implements Runnable {
 
         }
         else if(update.hasInlineQuery()){
+            logger.info("Inline query");
+
+            if(!update.getInlineQuery().hasQuery())
+                return;
+
+            logger.info("User name "+update.getInlineQuery().getFrom().getUserName());
+            logger.info("Query: "+update.getInlineQuery().getQuery());
+
 
         }
 
