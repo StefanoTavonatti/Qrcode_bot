@@ -20,6 +20,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
 
     private String username;
     private String token;
+    private boolean dbLogging=false;
     private ThreadPoolExecutor executor;
 
     public QrCodeBot(){
@@ -27,6 +28,13 @@ public class QrCodeBot extends TelegramLongPollingBot{
         loadConfiguration();
 
         initializeExecutor();
+
+        if(dbLoggingEnabled()){
+            logger.info("DB logging enabled");
+        }
+        else {
+            logger.info("DB logging disabled");
+        }
     }
 
     private void initializeExecutor() {
@@ -80,6 +88,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
             // get the property value and print it out
             username=prop.getProperty("username");
             token=prop.getProperty("token");
+            dbLogging=Boolean.parseBoolean(prop.getProperty("db-logging","false"));
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -105,6 +114,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
 
         prop.setProperty("username","<username>");
         prop.setProperty("token","<token>");
+        prop.setProperty("db-logging","false");
 
         try {
             OutputStream outputStream=new FileOutputStream(PROPERTIES_FILE_NAME);
@@ -116,5 +126,9 @@ public class QrCodeBot extends TelegramLongPollingBot{
             e.printStackTrace();
             logger.error("unable to create file");
         }
+    }
+
+    public boolean dbLoggingEnabled(){
+        return dbLogging;
     }
 }
