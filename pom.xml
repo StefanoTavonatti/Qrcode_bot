@@ -7,12 +7,29 @@
     <groupId>tavonatti.stefano.bots</groupId>
     <artifactId>qrcode_bot</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <hibernate.version>4.3.6.Final</hibernate.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <db.username>${env.DB_USERNAME_QRCODEBOT}</db.username>
+        <db.password>${env.DB_PASSWORD_QRCODEBOT}</db.password>
+        <db.url>${env.DB_URL_QRCODEBOT}</db.url>
+    </properties>
+
+
     <build>
         <directory>${project.basedir}/target</directory>
         <outputDirectory>${project.build.directory}/classes</outputDirectory>
         <finalName>${project.artifactId}-${project.version}</finalName>
         <testOutputDirectory>${project.build.directory}/test-classes</testOutputDirectory>
         <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
@@ -125,11 +142,7 @@
         </pluginManagement>
     </build>
 
-    <properties>
-        <java.version>1.8</java.version>
-        <hibernate.version>4.3.6.Final</hibernate.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+
 
     <dependencies>
 
