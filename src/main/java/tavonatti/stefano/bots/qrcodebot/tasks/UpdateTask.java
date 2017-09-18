@@ -20,6 +20,7 @@ import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.Inp
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResultPhoto;
+import org.telegram.telegrambots.api.objects.inlinequery.result.chached.InlineQueryResultCachedPhoto;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -44,6 +45,7 @@ public class UpdateTask implements Runnable {
     private final static int WIDTH_QR=500;
     private final static int HEIGHT_QR=500;
     private final static long MAX_USE_NUM=9223372036854775000L;
+    private final static String INLINE_IMG_TOCKEN="###";
 
     private QrCodeBot qrCodeBot;
     private Update update;
@@ -126,8 +128,23 @@ public class UpdateTask implements Runnable {
                             return;
                         }
 
-                        inlineKeyboardButton.setSwitchInlineQuery(photoSent.getPhoto().get(0).getFileId());
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
 
+                        inlineKeyboardButton.setSwitchInlineQuery(INLINE_IMG_TOCKEN);
+
+                        String f_id = photoSent.getPhoto().stream()
+                                .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
+                                .findFirst()
+                                .orElse(null).getFileId();
+
+                        u.setFileIdForInline(f_id);
+                        u.setThumbIdForInline(String.valueOf(photoSent.getPhoto().get(0).getFileId()));
+
+                        User.saveUser(u);
 
                         SendMessage message1=new SendMessage();
                         message1.setChatId(update.getMessage().getChatId());
@@ -280,26 +297,79 @@ public class UpdateTask implements Runnable {
                 u.setUsername(update.getInlineQuery().getFrom().getUserName());
             }
 
-            u.setTextToEncode(update.getInlineQuery().getQuery());
-
-            User.saveUser(u);
-
-            AnswerInlineQuery answerInlineQuery=new AnswerInlineQuery();
+            AnswerInlineQuery answerInlineQuery = new AnswerInlineQuery();
             answerInlineQuery.setInlineQueryId(update.getInlineQuery().getId());
 
-            List<InlineQueryResult> inlineQueryResults=new ArrayList<>();
-
+            List<InlineQueryResult> inlineQueryResults = new ArrayList<>();
             answerInlineQuery.setResults(inlineQueryResults);
-            answerInlineQuery.setSwitchPmParameter("encode");
-            answerInlineQuery.setSwitchPmText("Encode: "+update.getInlineQuery().getQuery());
+
+            if(update.getInlineQuery().getQuery().equals(INLINE_IMG_TOCKEN) && u.getFileIdForInline()!=null){
+
+               // String uuid=UUID.fromString(u.getFileIdForInline()).toString();
+
+                /*send an aleady encode QR*/
+                InlineQueryResultCachedPhoto inlineQueryResultCachedPhoto=new InlineQueryResultCachedPhoto().setPhotoFileId(u.getFileIdForInline());
+
+                inlineQueryResultCachedPhoto.setId(u.getFileIdForInline());
+                inlineQueryResults.add(inlineQueryResultCachedPhoto);
+
+                logger.info("Load cached photo------------------------------");
+
+                /*logger.info("id file: "+u.getFileIdForInline()+"\n"+
+                    "UUID: ");
+                */
+                /*GetFile getFile=new GetFile();
+                getFile.setFileId(u.getFileIdForInline());
+                File file;
+                try {
+                    file=qrCodeBot.getFile(getFile);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+
+                    return;
+                }
+
+                GetFile getFile2=new GetFile();
+                getFile2.setFileId(u.getThumbIdForInline());
+
+                File file1;
+
+                try {
+                    file1=qrCodeBot.getFile(getFile2);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                    return;
+                }
+
+
+                InlineQueryResultPhoto inlineQueryResultPhoto=new InlineQueryResultPhoto();
+                inlineQueryResultPhoto.setPhotoUrl(file.getFileUrl(qrCodeBot.getBotToken()));
+                inlineQueryResultPhoto.setThumbUrl(file1.getFileUrl(qrCodeBot.getBotToken()));
+                inlineQueryResultPhoto.setId(u.getFileIdForInline());
+
+                logger.info("file url inline: "+file.getFileUrl(qrCodeBot.getBotToken()));
+
+
+                inlineQueryResults.add(inlineQueryResultPhoto);*/
+            }
+            else {
+                /*save data in order to encode a new QR*/
+                u.setTextToEncode(update.getInlineQuery().getQuery());
+
+                User.saveUser(u);
+
+                answerInlineQuery.setSwitchPmParameter("encode");
+                answerInlineQuery.setSwitchPmText("Encode: " + update.getInlineQuery().getQuery());
+
+
+            }
 
             try {
-                logger.info("send result= "+qrCodeBot.answerInlineQuery(answerInlineQuery));
+                answerInlineQuery.setCacheTime(0);
+                logger.info("send result= " + qrCodeBot.answerInlineQuery(answerInlineQuery));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
-
-
         }
 
     }
