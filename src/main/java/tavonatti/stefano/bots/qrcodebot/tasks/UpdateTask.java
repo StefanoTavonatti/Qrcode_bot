@@ -7,6 +7,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
+import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -14,7 +15,10 @@ import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputMessageContent;
+import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
+import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResultPhoto;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
 import tavonatti.stefano.bots.qrcodebot.entities.ChatEntity;
@@ -72,6 +76,9 @@ public class UpdateTask implements Runnable {
             }
 
             switch (commandSplit[0]){
+                case "/start":
+
+                    //break;
                 case "/help":
                     String helpText="/encode <text>: encode the <text> inside a QRCode\n"+
                             "send a photo with a QrCode in order to decode it.";
@@ -227,6 +234,21 @@ public class UpdateTask implements Runnable {
 
             logger.info("User name "+update.getInlineQuery().getFrom().getUserName());
             logger.info("Query: "+update.getInlineQuery().getQuery());
+
+            AnswerInlineQuery answerInlineQuery=new AnswerInlineQuery();
+            answerInlineQuery.setInlineQueryId(update.getInlineQuery().getId());
+
+            List<InlineQueryResult> inlineQueryResults=new ArrayList<>();
+
+            answerInlineQuery.setResults(inlineQueryResults);
+            answerInlineQuery.setSwitchPmParameter("enc_"+update.getInlineQuery().getQuery());
+            answerInlineQuery.setSwitchPmText("Encode text");
+
+            try {
+                logger.info("send result= "+qrCodeBot.answerInlineQuery(answerInlineQuery));
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
 
 
         }

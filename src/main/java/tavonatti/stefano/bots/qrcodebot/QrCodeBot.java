@@ -64,7 +64,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
     public void sendResponse(SendMessage message){//TODO check 4096 chars
         try {
             sendMessage(message);
-            System.out.println(message);
+            logger.info(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
