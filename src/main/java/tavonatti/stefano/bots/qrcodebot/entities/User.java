@@ -1,6 +1,7 @@
 package tavonatti.stefano.bots.qrcodebot.entities;
 
 import tavonatti.stefano.bots.qrcodebot.entities.dao.QRCodeBotDao;
+import tavonatti.stefano.bots.qrcodebot.entities.extra.Role;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -14,6 +15,9 @@ public class User implements Serializable {
     private long userId;
 
     private String username;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @ManyToMany(cascade = CascadeType.PERSIST,fetch = FetchType.EAGER, mappedBy = "users")
     private Set<ChatEntity> chatEntities;
@@ -59,5 +63,13 @@ public class User implements Serializable {
 
     public void setChatEntities(Set<ChatEntity> chatEntities) {
         this.chatEntities = chatEntities;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
