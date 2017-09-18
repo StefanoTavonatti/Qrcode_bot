@@ -5,6 +5,7 @@ import tavonatti.stefano.bots.qrcodebot.entities.extra.Role;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 @Entity

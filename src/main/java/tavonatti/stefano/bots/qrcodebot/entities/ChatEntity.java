@@ -54,6 +54,16 @@ public class ChatEntity implements Serializable{
         return c;
     }
 
+
+    public static List<ChatEntity> getAllByDate(){
+        EntityManager em=QRCodeBotDao.instance.createEntityManager();
+        TypedQuery<ChatEntity> query=em.createQuery("SELECT DISTINCT c FROM ChatEntity c " +
+                "ORDER By c.lasUse DESC ",ChatEntity.class);
+        List<ChatEntity> chats=query.getResultList();
+        QRCodeBotDao.instance.closeConnections(em);
+        return chats;
+    }
+
     public long getChatId() {
         return chatId;
     }

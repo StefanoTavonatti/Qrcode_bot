@@ -27,6 +27,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
 import tavonatti.stefano.bots.qrcodebot.entities.ChatEntity;
 import tavonatti.stefano.bots.qrcodebot.entities.User;
+import tavonatti.stefano.bots.qrcodebot.entities.extra.Role;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -201,6 +202,45 @@ public class UpdateTask implements Runnable {
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
+
+                    return;
+
+                case "/chats":
+
+                    User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+
+                    if(u==null){
+                        return;
+                    }
+
+                    if(u.getRole()==null){
+                        return;
+                    }
+
+                    if(!u.getRole().equals(Role.ADMIN)){
+                        return;
+                    }
+
+                    List<ChatEntity> chatEntities=ChatEntity.getAllByDate();
+                    String chatsString="Last used chat\n";
+
+                    Iterator<ChatEntity> it=chatEntities.iterator();
+
+                    while (it.hasNext()){
+                        ChatEntity c=it.next();
+
+                        Iterator<User> it1=c.getUsers().iterator();
+                        while (it1.hasNext()){
+                            User user=it1.next();
+                            chatsString+=user.getUsername()+"\t*"+c.getNumberOfUses()+"*\t"+c.getLasUse()+"\t"+
+                                    c.getChatId()+"\n";
+                        }
+                    }
+
+                    message.setText(chatsString.replace("_","\\_"));
+                    message.enableMarkdown(true);
+
+                    qrCodeBot.sendResponse(message);
 
                     return;
 
