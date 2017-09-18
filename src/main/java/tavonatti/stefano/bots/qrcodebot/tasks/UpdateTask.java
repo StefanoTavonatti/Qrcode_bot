@@ -13,12 +13,15 @@ import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.File;
+import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResultPhoto;
+import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import tavonatti.stefano.bots.qrcodebot.QrCodeBot;
 import tavonatti.stefano.bots.qrcodebot.entities.ChatEntity;
@@ -77,13 +80,68 @@ public class UpdateTask implements Runnable {
 
             switch (commandSplit[0]){
                 case "/start":
+                    if(splits.length>1){
 
+                        User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+
+                        if(u==null){
+                            getHelpMessage(message);
+                            qrCodeBot.sendResponse(message);
+                            return;
+                        }
+
+
+                        SendPhoto sendPhoto=new SendPhoto();
+                        sendPhoto.setChatId(update.getMessage().getChatId());
+
+                        InputStream is=getQRInputStream(u.getTextToEncode());
+
+                        sendPhoto.setNewPhoto("qrcode",is);
+
+                        InlineKeyboardMarkup inlineKeyboardMarkup=new InlineKeyboardMarkup();
+
+                        List<List<InlineKeyboardButton>> rows=new ArrayList<>();
+
+                        List<InlineKeyboardButton> row=new ArrayList<>();
+
+                        rows.add(row);
+
+                        InlineKeyboardButton inlineKeyboardButton=new InlineKeyboardButton();
+
+                        inlineKeyboardButton.setText("send qr");
+
+                        row.add(inlineKeyboardButton);
+
+                        inlineKeyboardMarkup.setKeyboard(rows);
+
+                        //sendPhoto.setReplyMarkup(inlineKeyboardMarkup);
+
+                        Message photoSent;
+
+                        try {
+                            photoSent=qrCodeBot.sendPhoto(sendPhoto);
+                        } catch (TelegramApiException e) {
+                            sendErrorMessage("unable to create qr");//TODO logging in questo metodo
+                            e.printStackTrace();
+                            return;
+                        }
+
+                        inlineKeyboardButton.setSwitchInlineQuery(photoSent.getPhoto().get(0).getFileId());
+
+
+                        SendMessage message1=new SendMessage();
+                        message1.setChatId(update.getMessage().getChatId());
+                        message1.setText("OK");
+
+                        message1.setReplyMarkup(inlineKeyboardMarkup);
+
+                        qrCodeBot.sendResponse(message1);
+
+                        return;
+                    }
                     //break;
                 case "/help":
-                    String helpText="/encode <text>: encode the <text> inside a QRCode\n"+
-                            "send a photo with a QrCode in order to decode it.";
-
-                    message.setText(helpText);
+                    getHelpMessage(message);
                     qrCodeBot.sendResponse(message);
                     break;
                 case "/encode":
@@ -107,30 +165,8 @@ public class UpdateTask implements Runnable {
                     sendPhoto.setChatId(update.getMessage().getChatId());
 
                     /*create Qrcode */
-                    BufferedImage bufferedImage;
-                    try {
-                        bufferedImage=createQr(text);
-                    } catch (WriterException e) {
-                        sendErrorMessage("Unable to encode the image");
-                        e.printStackTrace();
-                        return;
-                    } catch (IOException e) {
-                        sendErrorMessage("Unable to encode the image");
-                        e.printStackTrace();
-                        return;
-                    }
-
-                    /*get a InputStream with the qrcode*/
-                    ByteArrayOutputStream baos=new ByteArrayOutputStream();
-
-                    try {
-                        ImageIO.write(bufferedImage,"jpg",baos);
-                        baos.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    InputStream is=new ByteArrayInputStream(baos.toByteArray());
+                    InputStream is = getQRInputStream(text);
+                    if (is == null) return;
 
                     /*send the qrcode*/
                     sendPhoto.setNewPhoto("qrcode",is);
@@ -226,7 +262,8 @@ public class UpdateTask implements Runnable {
             qrCodeBot.sendResponse(message);
 
         }
-        else if(update.hasInlineQuery()){
+        else if(update.hasInlineQuery() && qrCodeBot.dbLoggingEnabled()){
+            /*the inline query mode is available only with the dblogging enable*/
             logger.info("Inline query");
 
             if(!update.getInlineQuery().hasQuery())
@@ -235,14 +272,26 @@ public class UpdateTask implements Runnable {
             logger.info("User name "+update.getInlineQuery().getFrom().getUserName());
             logger.info("Query: "+update.getInlineQuery().getQuery());
 
+            User u=User.getById(Long.valueOf(update.getInlineQuery().getFrom().getId()));
+
+            if(u==null){
+                u=new User();
+                u.setUserId(Long.valueOf(update.getInlineQuery().getFrom().getId()));
+                u.setUsername(update.getInlineQuery().getFrom().getUserName());
+            }
+
+            u.setTextToEncode(update.getInlineQuery().getQuery());
+
+            User.saveUser(u);
+
             AnswerInlineQuery answerInlineQuery=new AnswerInlineQuery();
             answerInlineQuery.setInlineQueryId(update.getInlineQuery().getId());
 
             List<InlineQueryResult> inlineQueryResults=new ArrayList<>();
 
             answerInlineQuery.setResults(inlineQueryResults);
-            answerInlineQuery.setSwitchPmParameter("enc_"+update.getInlineQuery().getQuery());
-            answerInlineQuery.setSwitchPmText("Encode text");
+            answerInlineQuery.setSwitchPmParameter("encode");
+            answerInlineQuery.setSwitchPmText("Encode: "+update.getInlineQuery().getQuery());
 
             try {
                 logger.info("send result= "+qrCodeBot.answerInlineQuery(answerInlineQuery));
@@ -253,6 +302,41 @@ public class UpdateTask implements Runnable {
 
         }
 
+    }
+
+    private void getHelpMessage(SendMessage message) {
+        String helpText="/encode <text>: encode the <text> inside a QRCode\n"+
+                "send a photo with a QrCode in order to decode it.";
+
+        message.setText(helpText);
+    }
+
+    private InputStream getQRInputStream(String text) {
+        BufferedImage bufferedImage;
+        try {
+            bufferedImage=createQr(text);
+        } catch (WriterException e) {
+            sendErrorMessage("Unable to encode the image");
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            sendErrorMessage("Unable to encode the image");
+            e.printStackTrace();
+            return null;
+        }
+
+                    /*get a InputStream with the qrcode*/
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+
+        try {
+            ImageIO.write(bufferedImage,"jpg",baos);
+            baos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        InputStream is=new ByteArrayInputStream(baos.toByteArray());
+        return is;
     }
 
     private void updateChatAndUserInformation(){
