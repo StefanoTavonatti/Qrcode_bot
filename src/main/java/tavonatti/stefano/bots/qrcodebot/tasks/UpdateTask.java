@@ -83,7 +83,8 @@ public class UpdateTask implements Runnable {
             switch (commandSplit[0]){
                 case "/start":
                     if(splits.length>1){
-
+                        /*for inline mode
+                        * encode the QR and forward to original chat*/
                         User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
 
                         if(u==null){
@@ -91,6 +92,13 @@ public class UpdateTask implements Runnable {
                             qrCodeBot.sendResponse(message);
                             return;
                         }
+
+                        SendMessage waitMessage=new SendMessage();
+
+                        waitMessage.setChatId(update.getMessage().getChatId());
+                        waitMessage.setText("encoding your text...");
+
+                        qrCodeBot.sendResponse(waitMessage);
 
 
                         SendPhoto sendPhoto=new SendPhoto();
@@ -315,42 +323,7 @@ public class UpdateTask implements Runnable {
 
                 logger.info("Load cached photo------------------------------");
 
-                /*logger.info("id file: "+u.getFileIdForInline()+"\n"+
-                    "UUID: ");
-                */
-                /*GetFile getFile=new GetFile();
-                getFile.setFileId(u.getFileIdForInline());
-                File file;
-                try {
-                    file=qrCodeBot.getFile(getFile);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
 
-                    return;
-                }
-
-                GetFile getFile2=new GetFile();
-                getFile2.setFileId(u.getThumbIdForInline());
-
-                File file1;
-
-                try {
-                    file1=qrCodeBot.getFile(getFile2);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                    return;
-                }
-
-
-                InlineQueryResultPhoto inlineQueryResultPhoto=new InlineQueryResultPhoto();
-                inlineQueryResultPhoto.setPhotoUrl(file.getFileUrl(qrCodeBot.getBotToken()));
-                inlineQueryResultPhoto.setThumbUrl(file1.getFileUrl(qrCodeBot.getBotToken()));
-                inlineQueryResultPhoto.setId(u.getFileIdForInline());
-
-                logger.info("file url inline: "+file.getFileUrl(qrCodeBot.getBotToken()));
-
-
-                inlineQueryResults.add(inlineQueryResultPhoto);*/
             }
             else {
                 /*save data in order to encode a new QR*/
