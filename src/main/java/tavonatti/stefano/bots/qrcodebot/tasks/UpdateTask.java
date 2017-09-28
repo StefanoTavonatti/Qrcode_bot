@@ -5,6 +5,8 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.datamatrix.DataMatrixWriter;
+import com.google.zxing.datamatrix.encoder.SymbolShapeHint;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
@@ -47,6 +49,9 @@ public class UpdateTask implements Runnable {
     private final static int HEIGHT_QR=500;
     private final static long MAX_USE_NUM=9223372036854775000L;
     private final static String INLINE_IMG_TOCKEN="###";
+
+    private final static int WIDTH_DM=64;
+    private final static int HEIGHT_DM=64;
 
     private QrCodeBot qrCodeBot;
     private Update update;
@@ -205,6 +210,48 @@ public class UpdateTask implements Runnable {
 
                     return;
 
+                case "/encode_dm":
+
+                    if(splits.length<2){
+                        message.setText("use:\n/encode_dm <text>");
+                        qrCodeBot.sendResponse(message);
+                        break;
+                    }
+
+                    String textDM="";
+
+                    //i=1 in order to skyp the encode command
+                    for(int i=1;i<splits.length;i++){
+                        if(i!=1){
+                            textDM+=" ";
+                        }
+                        textDM+=splits[i];
+                    }
+
+                    SendPhoto sendPhotoDM=new SendPhoto();
+                    sendPhotoDM.setChatId(update.getMessage().getChatId());
+
+                    InputStream isDM = null;
+
+                    try {
+                        isDM=getInputStreamFromBufferedImage(createDataMatrix(textDM));
+                    } catch (WriterException e) {
+                        e.printStackTrace();
+                        sendErrorMessage("Unable to encode the text");
+                    }
+
+                    if(isDM==null)
+                        return;
+
+                    sendPhotoDM.setNewPhoto("DataMatrix",isDM);
+
+                    try {
+                        qrCodeBot.sendPhoto(sendPhotoDM);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+
+                    return;
                 case "/chats":
 
                     User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
@@ -409,6 +456,11 @@ public class UpdateTask implements Runnable {
         }
 
                     /*get a InputStream with the qrcode*/
+        InputStream is = getInputStreamFromBufferedImage(bufferedImage);
+        return is;
+    }
+
+    private InputStream getInputStreamFromBufferedImage(BufferedImage bufferedImage) {
         ByteArrayOutputStream baos=new ByteArrayOutputStream();
 
         try {
@@ -418,8 +470,7 @@ public class UpdateTask implements Runnable {
             e.printStackTrace();
         }
 
-        InputStream is=new ByteArrayInputStream(baos.toByteArray());
-        return is;
+        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     private void updateChatAndUserInformation(){
@@ -486,6 +537,22 @@ public class UpdateTask implements Runnable {
         BufferedImage bufferedImage=MatrixToImageWriter.toBufferedImage(matrix);
 
         return bufferedImage;
+    }
+
+    private BufferedImage createDataMatrix(String text) throws WriterException {
+        Map hintMap =new HashMap();
+        hintMap.put(EncodeHintType.DATA_MATRIX_SHAPE, SymbolShapeHint.FORCE_SQUARE);
+
+        BitMatrix matrix= new MultiFormatWriter().encode(text,
+                BarcodeFormat.DATA_MATRIX,WIDTH_DM,HEIGHT_DM);
+
+
+        DataMatrixWriter writer = new DataMatrixWriter();
+
+        matrix=writer.encode(text,BarcodeFormat.DATA_MATRIX,matrix.getWidth(),matrix.getHeight(),hintMap);
+
+
+        return MatrixToImageWriter.toBufferedImage(matrix);
     }
 
     private InputStream getFileInputStream(File file) throws IOException {
