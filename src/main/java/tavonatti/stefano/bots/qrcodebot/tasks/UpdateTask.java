@@ -45,8 +45,11 @@ public class UpdateTask implements Runnable {
     public static Logger logger=Logger.getLogger(UpdateTask.class);
 
     private final static String CHARSET="UTF-8"; // or "ISO-8859-1"
+
     private final static int WIDTH_QR=500;
     private final static int HEIGHT_QR=500;
+    private final static int SIZE_THRESHOLD=250;
+
     private final static long MAX_USE_NUM=9223372036854775000L;
     private final static String INLINE_IMG_TOCKEN="###";
 
@@ -530,9 +533,17 @@ public class UpdateTask implements Runnable {
         //String charset, Map hintMap, int qrCodeheight, int qrCodewidth)
         Map hintMap = getHintMap();
 
+        /* used for creating bigger images */
+        int mult=1;
+
+        if(text.length()>SIZE_THRESHOLD)
+            mult+=text.length()/SIZE_THRESHOLD;
+
         BitMatrix matrix = new MultiFormatWriter().encode(
                 new String(text.getBytes(CHARSET), CHARSET),
-                BarcodeFormat.QR_CODE, WIDTH_QR, HEIGHT_QR, hintMap);
+                BarcodeFormat.QR_CODE, WIDTH_QR*mult, HEIGHT_QR*mult, hintMap);
+
+        logger.info("Moltiplicator= "+mult);
 
         BufferedImage bufferedImage=MatrixToImageWriter.toBufferedImage(matrix);
 
