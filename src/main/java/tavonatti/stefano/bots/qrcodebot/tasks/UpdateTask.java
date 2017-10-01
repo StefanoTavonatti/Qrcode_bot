@@ -3,12 +3,17 @@ package tavonatti.stefano.bots.qrcodebot.tasks;
 import com.google.zxing.*;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitArray;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.datamatrix.DataMatrixWriter;
 import com.google.zxing.datamatrix.encoder.SymbolShapeHint;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
+import org.jfree.graphics2d.svg.SVGGraphics2D;
+import org.jfree.graphics2d.svg.SVGGraphicsDevice;
+import org.jfree.graphics2d.svg.SVGUtils;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
@@ -32,6 +37,7 @@ import tavonatti.stefano.bots.qrcodebot.entities.User;
 import tavonatti.stefano.bots.qrcodebot.entities.extra.Role;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.MalformedURLException;
@@ -39,6 +45,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
 
 public class UpdateTask implements Runnable {
 
@@ -213,6 +220,44 @@ public class UpdateTask implements Runnable {
 
                     return;
 
+                case "/encode_svg":
+                    if(splits.length<2){
+                        message.setText("use:\n/encode <text>");
+                        qrCodeBot.sendResponse(message);
+                        break;
+                    }
+
+                    String textSvg="";
+
+                    //i=1 in order to skyp the encode command
+                    for(int i=1;i<splits.length;i++){
+                        if(i!=1){
+                            textSvg+=" ";
+                        }
+                        textSvg+=splits[i];
+                    }
+
+                    SendDocument sendDocument=new SendDocument();
+                    sendDocument.setChatId(update.getMessage().getChatId());
+
+                    try {
+                        sendDocument.setNewDocument("qrcode.svg",createQrSVG(textSvg));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                        sendErrorMessage("Unable to encode the text");
+                        return;
+                    } catch (WriterException e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        qrCodeBot.sendDocument(sendDocument);
+                        System.out.println("inviato");
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+
+                    return;
                 case "/encode_dm":
 
                     if(splits.length<2){
@@ -530,6 +575,64 @@ public class UpdateTask implements Runnable {
     }
 
     private BufferedImage createQr(String text) throws WriterException, IOException{
+        BitMatrix matrix = getQRCodeBitMatrix(text);
+
+
+        BufferedImage bufferedImage=MatrixToImageWriter.toBufferedImage(matrix);
+
+        return bufferedImage;
+    }
+
+    private InputStream createQrSVG(String text) throws UnsupportedEncodingException, WriterException {
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        BitMatrix bitMatrix = qrCodeWriter.encode("http://www.jfree.org/jfreesvg",
+                BarcodeFormat.QR_CODE,160,160);
+
+        //BitMatrix bitMatrix=getQRCodeBitMatrix(text);
+
+        //source: https://stackoverflow.com/questions/10789059/create-qr-code-in-vector-image
+
+        int w = bitMatrix.getWidth();
+        SVGGraphics2D g2 = new SVGGraphics2D(w, w);
+        g2.setColor(Color.BLACK);
+
+        /*for(int y=0; y<bitMatrix.getWidth();y++){
+            BitArray bitArray= bitMatrix.getRow(y,null);
+            for (int x = 0; x < bitArray.getSize(); x++) {
+                if (bitArray.get(x)) {
+                    g2.fillRect(x,y,bitMatrix.getRowSize(),bitMatrix.getRowSize());
+                }
+                System.out.println("qui "+x+" "+y);
+            }
+        }*/
+        System.out.println("w= "+w);
+        for (int xIndex = 0; xIndex < w; xIndex = xIndex +  1) {
+
+            for (int yIndex = 0; yIndex < bitMatrix.getHeight(); yIndex = yIndex +  1) {
+                if (bitMatrix.get(xIndex,yIndex)) {
+                    g2.fillRect(xIndex, yIndex, 1, 1);
+
+                }
+                System.out.println("qui "+xIndex+" "+yIndex);
+            }
+        }
+        System.out.println("qui finr");
+        //String result="<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
+        //result+=g2.getS
+        byte[] bytes=g2.getSVGDocument().getBytes();
+
+        try {
+            SVGUtils.writeToSVG(new java.io.File("Pri.svg"),g2.getSVGElement());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("byte_size "+bytes.length);
+
+        return new ByteArrayInputStream(bytes);
+    }
+
+    private BitMatrix getQRCodeBitMatrix(String text) throws WriterException, UnsupportedEncodingException {
         //String charset, Map hintMap, int qrCodeheight, int qrCodewidth)
         Map hintMap = getHintMap();
 
@@ -544,10 +647,7 @@ public class UpdateTask implements Runnable {
                 BarcodeFormat.QR_CODE, WIDTH_QR*mult, HEIGHT_QR*mult, hintMap);
 
         logger.info("Moltiplicator= "+mult);
-
-        BufferedImage bufferedImage=MatrixToImageWriter.toBufferedImage(matrix);
-
-        return bufferedImage;
+        return matrix;
     }
 
     private BufferedImage createDataMatrix(String text) throws WriterException {
