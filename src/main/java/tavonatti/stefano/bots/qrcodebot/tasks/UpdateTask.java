@@ -213,6 +213,45 @@ public class UpdateTask implements Runnable {
 
                     return;
 
+                case "/encode_wifi":
+
+                    /* create a QR for wifi credential*/
+                    // wifi connection string WIFI:S:<SSID>;T:<WPA|WEP|>;P:<password>;;
+                    SendPhoto sendPhotoWIFI=new SendPhoto();
+                    sendPhotoWIFI.setChatId(update.getMessage().getChatId());
+
+                    String ssid,type,password;
+
+                    if(splits.length==4){
+                        ssid=splits[1];
+                        type=splits[2];
+                        password=splits[3];
+                    } else if (splits.length==3){
+                        ssid=splits[1];
+                        password=splits[2];
+                        type="WPA";
+                    }
+                    else {
+                        message.setText("use:\n/encode_wifi <SSID> <WPA|WEP> <password> " +
+                                "\nor: /encode_wifi <SSID> <password> for WPA network");
+                        qrCodeBot.sendResponse(message);
+                        break;
+                    }
+
+                    /*create Qrcode */
+                    InputStream isWIFI = getQRInputStream("WIFI:S:"+ssid+";T:"+type+";P:"+password+";;");
+                    if (isWIFI == null) return;
+
+                    /*send the qrcode*/
+                    sendPhotoWIFI.setNewPhoto("qrcode_WIFI",isWIFI);
+
+                    try {
+                        qrCodeBot.sendPhoto(sendPhotoWIFI);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+
+                    return;
                 case "/encode_dm":
 
                     if(splits.length<2){
