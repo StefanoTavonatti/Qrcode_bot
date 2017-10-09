@@ -14,10 +14,8 @@ import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.File;
-import org.telegram.telegrambots.api.objects.Message;
-import org.telegram.telegrambots.api.objects.PhotoSize;
-import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
@@ -471,6 +469,55 @@ public class UpdateTask implements Runnable {
                 logger.info("send result= " + qrCodeBot.answerInlineQuery(answerInlineQuery));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
+            }
+        }
+        else if(update.hasMessage() && update.getMessage().getContact()!=null){//TODO decode contact
+
+            /* Vcart example
+
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:Paolo Rossi
+            ADR:;;123 Street;City;Region;PostalCode;Country
+            TEL:+908888888888
+            TEL:+901111111111
+            TEL:+902222222222
+            EMAIL;TYPE=home:homeemail@example.com
+            EMAIL;TYPE=work:workemail@example.com
+            URL:http://www.google.com
+            END:VCARD
+             */
+
+            updateChatAndUserInformation();
+
+            Contact contact=update.getMessage().getContact();
+
+            String text="BEGIN:VCARD\n" +
+                    "VERSION:3.0\n" +
+                    "FN:"+(contact.getFirstName()!=null?contact.getFirstName():"")+" "+
+                    (contact.getLastName()!=null?contact.getLastName():"")+"\n" +
+                    "TEL:"+(contact.getPhoneNumber()!=null?contact.getPhoneNumber():"")+"\n" +
+                    "END:VCARD";
+
+
+            InputStream in=getQRInputStream(text);
+
+            if(in==null){
+                sendErrorMessage("Unable to encode");
+                return;
+            }
+
+            SendPhoto sendPhoto=new SendPhoto();
+            sendPhoto.setChatId(update.getMessage().getChatId());
+
+            sendPhoto.setNewPhoto("qrcode_contact",in);
+
+            try {
+                qrCodeBot.sendPhoto(sendPhoto);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+                sendErrorMessage("Unable to encode");
+                return;
             }
         }
 
