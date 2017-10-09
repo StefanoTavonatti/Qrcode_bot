@@ -11,6 +11,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
+import org.telegram.telegrambots.api.methods.send.SendContact;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
@@ -400,7 +401,69 @@ public class UpdateTask implements Runnable {
             message.setChatId(update.getMessage().getChatId());
 
             try {
-                message.setText(readQRCode(is,hintMap));
+
+                 /* Vcart example
+
+                BEGIN:VCARD
+                VERSION:3.0
+                FN:Paolo Rossi
+                ADR:;;123 Street;City;Region;PostalCode;Country
+                TEL:+908888888888
+                TEL:+901111111111
+                TEL:+902222222222
+                EMAIL;TYPE=home:homeemail@example.com
+                EMAIL;TYPE=work:workemail@example.com
+                URL:http://www.google.com
+                END:VCARD
+                 */
+
+                String text=readQRCode(is,hintMap);
+
+                /* if the QRcode contains a vCard, send the contac*/
+                if(text.startsWith("BEGIN:VCARD")){
+
+                    if(logger.isInfoEnabled()){
+                        logger.info("decoding contact");
+                    }
+
+                    SendContact sendContact=new SendContact();
+                    sendContact.setChatId(update.getMessage().getChatId());
+
+                    /*retrieve first and last name*/
+                    int ind=text.indexOf("FN:")+3;
+
+                    if(ind!=-1) {
+                        String temp = text.substring(ind, text.indexOf('\n', ind));
+
+                        String lastAndFirstName[] = temp.split(" ");
+
+                        sendContact.setFirstName(lastAndFirstName[0]);
+                        if(lastAndFirstName.length>1){
+                            sendContact.setLastName(lastAndFirstName[1]);
+                        }
+                    }
+
+                    ind=text.indexOf("TEL:")+4;
+
+                    if(ind!=-1){
+                        sendContact.setPhoneNumber(text.substring(ind,text.indexOf('\n',ind)));
+                    }
+
+                    try {
+                        qrCodeBot.sendContact(sendContact);
+
+                        return;
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                        message.setText(text);
+                    }
+
+
+
+                }
+                else {
+                    message.setText(text);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 sendErrorMessage("Unable to download file");
@@ -471,7 +534,7 @@ public class UpdateTask implements Runnable {
                 e.printStackTrace();
             }
         }
-        else if(update.hasMessage() && update.getMessage().getContact()!=null){//TODO decode contact
+        else if(update.hasMessage() && update.getMessage().getContact()!=null){
 
             /* Vcart example
 
