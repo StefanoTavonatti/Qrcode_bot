@@ -80,7 +80,8 @@ public class QrCodeBot extends TelegramLongPollingBot{
 
         try {
 
-            input = new FileInputStream(PROPERTIES_FILE_NAME);
+            /* retrieve file inside the jar*/
+            input = new FileInputStream(new File(QrCodeBot.class.getClassLoader().getResource(PROPERTIES_FILE_NAME).getFile()));
 
             // load a properties file
             prop.load(input);
@@ -95,7 +96,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
             logger.error("fill the bot_config.properties file");
 
             // create empty properties file
-            createPropertiesFile();
+            //createPropertiesFile();
 
             System.exit(1);
         } finally {
@@ -109,6 +110,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
         }
     }
 
+    @Deprecated
     private void createPropertiesFile(){
         Properties prop=new Properties();
 

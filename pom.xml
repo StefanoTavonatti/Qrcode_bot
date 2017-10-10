@@ -12,6 +12,9 @@
         <java.version>1.8</java.version>
         <hibernate.version>4.3.6.Final</hibernate.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <bot.username>${env.QRCODEBOT_USERNAME}</bot.username>
+        <bot.tocken>${env.QRCODEBOT_TOCKEN}</bot.tocken>
         <db.username>${env.DB_USERNAME_QRCODEBOT}</db.username>
         <db.password>${env.DB_PASSWORD_QRCODEBOT}</db.password>
         <db.url>${env.DB_URL_QRCODEBOT}</db.url>
