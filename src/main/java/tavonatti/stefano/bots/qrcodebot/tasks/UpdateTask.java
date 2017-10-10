@@ -589,6 +589,31 @@ public class UpdateTask implements Runnable {
                 return;
             }
         }
+        else if(update.hasMessage() && update.getMessage().hasLocation()){
+            Location loc=update.getMessage().getLocation();
+
+            String text="geo:"+loc.getLatitude()+","+loc.getLongitude();
+
+            InputStream is=getQRInputStream(text);
+
+            if(is==null){
+                sendErrorMessage("Unable to encode the geo informations");
+                return;
+            }
+
+            SendPhoto sendPhoto=new SendPhoto();
+            sendPhoto.setChatId(update.getMessage().getChatId());
+
+            sendPhoto.setNewPhoto("QRcode_geo",is);
+
+            try {
+                qrCodeBot.sendPhoto(sendPhoto);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+                sendErrorMessage("Unable to send the photo");
+                return;
+            }
+        }
 
     }
 
