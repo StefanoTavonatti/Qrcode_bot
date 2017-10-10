@@ -58,6 +58,8 @@ public class UpdateTask implements Runnable {
     private QrCodeBot qrCodeBot;
     private Update update;
 
+    private final static boolean VCARD_ENABLED=true;
+
     public UpdateTask(QrCodeBot qrCodeBot, Update update){
         this.qrCodeBot=qrCodeBot;
         this.update=update;
@@ -443,6 +445,10 @@ public class UpdateTask implements Runnable {
                         }
                     }
 
+                    /*if vcard is enabled, send also vcard file*/
+                    if(VCARD_ENABLED)
+                        sendVcardFile(text,sendContact.getFirstName());
+
                     ind=text.indexOf("TEL:")+4;
 
                     if(ind!=-1){
@@ -582,6 +588,31 @@ public class UpdateTask implements Runnable {
                 sendErrorMessage("Unable to encode");
                 return;
             }
+        }
+
+    }
+
+    private void sendVcardFile(String text,String name) {
+        SendDocument sendDocument=new SendDocument();
+        sendDocument.setChatId(update.getMessage().getChatId());
+
+
+        InputStream is=new ByteArrayInputStream(text.getBytes());
+
+        if(is==null)
+            return;
+
+        String documetName="vCard";
+
+        if(name!=null)
+            documetName=name;
+
+        sendDocument.setNewDocument(documetName+".vcard",is);
+
+        try {
+            qrCodeBot.sendDocument(sendDocument);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
 
     }
