@@ -424,46 +424,7 @@ public class UpdateTask implements Runnable {
                 /* if the QRcode contains a vCard, send the contac*/
                 if(text.startsWith("BEGIN:VCARD")){
 
-                    if(logger.isInfoEnabled()){
-                        logger.info("decoding contact");
-                    }
-
-                    SendContact sendContact=new SendContact();
-                    sendContact.setChatId(update.getMessage().getChatId());
-
-                    /*retrieve first and last name*/
-                    int ind=text.indexOf("FN:")+3;
-
-                    if(ind!=-1) {
-                        String temp = text.substring(ind, text.indexOf('\n', ind));
-
-                        String lastAndFirstName[] = temp.split(" ");
-
-                        sendContact.setFirstName(lastAndFirstName[0]);
-                        if(lastAndFirstName.length>1){
-                            sendContact.setLastName(lastAndFirstName[1]);
-                        }
-                    }
-
-                    /*if vcard is enabled, send also vcard file*/
-                    if(VCARD_ENABLED)
-                        sendVcardFile(text,sendContact.getFirstName());
-
-                    ind=text.indexOf("TEL:")+4;
-
-                    if(ind!=-1){
-                        sendContact.setPhoneNumber(text.substring(ind,text.indexOf('\n',ind)));
-                    }
-
-                    try {
-                        qrCodeBot.sendContact(sendContact);
-
-                        return;
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                        message.setText(text);
-                    }
-
+                    if (decodeContact(message, text)) return;
 
 
                 }
@@ -615,6 +576,49 @@ public class UpdateTask implements Runnable {
             }
         }
 
+    }
+
+    private boolean decodeContact(SendMessage message, String text) {
+        if(logger.isInfoEnabled()){
+            logger.info("decoding contact");
+        }
+
+        SendContact sendContact=new SendContact();
+        sendContact.setChatId(update.getMessage().getChatId());
+
+                    /*retrieve first and last name*/
+        int ind=text.indexOf("FN:")+3;
+
+        if(ind!=-1) {
+            String temp = text.substring(ind, text.indexOf('\n', ind));
+
+            String lastAndFirstName[] = temp.split(" ");
+
+            sendContact.setFirstName(lastAndFirstName[0]);
+            if(lastAndFirstName.length>1){
+                sendContact.setLastName(lastAndFirstName[1]);
+            }
+        }
+
+                    /*if vcard is enabled, send also vcard file*/
+        if(VCARD_ENABLED)
+            sendVcardFile(text,sendContact.getFirstName());
+
+        ind=text.indexOf("TEL:")+4;
+
+        if(ind!=-1){
+            sendContact.setPhoneNumber(text.substring(ind,text.indexOf('\n',ind)));
+        }
+
+        try {
+            qrCodeBot.sendContact(sendContact);
+
+            return true;
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            message.setText(text);
+        }
+        return false;
     }
 
     private void sendVcardFile(String text,String name) {
