@@ -11,10 +11,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.apache.log4j.Logger;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
-import org.telegram.telegrambots.api.methods.send.SendContact;
-import org.telegram.telegrambots.api.methods.send.SendDocument;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.api.methods.send.*;
 import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputMessageContent;
@@ -426,6 +423,44 @@ public class UpdateTask implements Runnable {
 
                     if (decodeContact(message, text)) return;
 
+                }
+                else if(text.startsWith("geo:")|| text.startsWith("GEO:")){
+                    String temp=text.toLowerCase().replace("geo:","");
+                    String coordSplit[]=temp.split(",");
+
+                    SendLocation sendLocation=new SendLocation();
+                    sendLocation.setChatId(update.getMessage().getChatId());
+
+                    try {
+                        if(coordSplit.length==4){
+                            sendLocation.setLatitude(Float.parseFloat(coordSplit[0]+","+coordSplit[1]));
+                            sendLocation.setLongitude(Float.parseFloat(coordSplit[2]+","+coordSplit[3]));
+                        }
+                        else if(coordSplit.length==2){
+                            sendLocation.setLatitude(Float.parseFloat(coordSplit[0]));
+                            sendLocation.setLongitude(Float.parseFloat(coordSplit[1]));
+                        }
+                        else {
+                            sendErrorMessage(text);
+                            logger.error("Unable to generate the location for: "+text);
+                            return;
+                        }
+                    }
+                    catch (Exception e){
+                        sendErrorMessage(text);
+                        logger.error("Unable to generate the location for: "+text);
+                        return;
+                    }
+
+                    try {
+                        qrCodeBot.sendLocation(sendLocation);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                        sendErrorMessage("Unable to send the location");
+                        return;
+                    }
+
+                    return;
 
                 }
                 else {
