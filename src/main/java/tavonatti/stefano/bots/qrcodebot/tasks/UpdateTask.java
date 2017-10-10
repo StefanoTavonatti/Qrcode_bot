@@ -14,10 +14,7 @@ import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.*;
 import org.telegram.telegrambots.api.objects.*;
 import org.telegram.telegrambots.api.objects.File;
-import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputMessageContent;
-import org.telegram.telegrambots.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
 import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResult;
-import org.telegram.telegrambots.api.objects.inlinequery.result.InlineQueryResultPhoto;
 import org.telegram.telegrambots.api.objects.inlinequery.result.chached.InlineQueryResultCachedPhoto;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -32,8 +29,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class UpdateTask implements Runnable {
@@ -421,44 +416,11 @@ public class UpdateTask implements Runnable {
                 /* if the QRcode contains a vCard, send the contac*/
                 if(text.startsWith("BEGIN:VCARD")){
 
-                    if (decodeContact(message, text)) return;
+                    if (decodeAndSendContact(message, text)) return;
 
                 }
                 else if(text.startsWith("geo:")|| text.startsWith("GEO:")){
-                    String temp=text.toLowerCase().replace("geo:","");
-                    String coordSplit[]=temp.split(",");
-
-                    SendLocation sendLocation=new SendLocation();
-                    sendLocation.setChatId(update.getMessage().getChatId());
-
-                    try {
-                        if(coordSplit.length==4){
-                            sendLocation.setLatitude(Float.parseFloat(coordSplit[0]+","+coordSplit[1]));
-                            sendLocation.setLongitude(Float.parseFloat(coordSplit[2]+","+coordSplit[3]));
-                        }
-                        else if(coordSplit.length==2){
-                            sendLocation.setLatitude(Float.parseFloat(coordSplit[0]));
-                            sendLocation.setLongitude(Float.parseFloat(coordSplit[1]));
-                        }
-                        else {
-                            sendErrorMessage(text);
-                            logger.error("Unable to generate the location for: "+text);
-                            return;
-                        }
-                    }
-                    catch (Exception e){
-                        sendErrorMessage(text);
-                        logger.error("Unable to generate the location for: "+text);
-                        return;
-                    }
-
-                    try {
-                        qrCodeBot.sendLocation(sendLocation);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                        sendErrorMessage("Unable to send the location");
-                        return;
-                    }
+                    if (decodeAndSendLocation(text)) return;
 
                     return;
 
@@ -613,7 +575,45 @@ public class UpdateTask implements Runnable {
 
     }
 
-    private boolean decodeContact(SendMessage message, String text) {
+    private boolean decodeAndSendLocation(String text) {
+        String temp=text.toLowerCase().replace("geo:","");
+        String coordSplit[]=temp.split(",");
+
+        SendLocation sendLocation=new SendLocation();
+        sendLocation.setChatId(update.getMessage().getChatId());
+
+        try {
+            if(coordSplit.length==4){
+                sendLocation.setLatitude(Float.parseFloat(coordSplit[0]+","+coordSplit[1]));
+                sendLocation.setLongitude(Float.parseFloat(coordSplit[2]+","+coordSplit[3]));
+            }
+            else if(coordSplit.length==2){
+                sendLocation.setLatitude(Float.parseFloat(coordSplit[0]));
+                sendLocation.setLongitude(Float.parseFloat(coordSplit[1]));
+            }
+            else {
+                sendErrorMessage(text);
+                logger.error("Unable to generate the location for: "+text);
+                return true;
+            }
+        }
+        catch (Exception e){
+            sendErrorMessage(text);
+            logger.error("Unable to generate the location for: "+text);
+            return true;
+        }
+
+        try {
+            qrCodeBot.sendLocation(sendLocation);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            sendErrorMessage("Unable to send the location");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean decodeAndSendContact(SendMessage message, String text) {
         if(logger.isInfoEnabled()){
             logger.info("decoding contact");
         }
