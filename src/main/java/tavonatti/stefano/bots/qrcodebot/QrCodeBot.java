@@ -81,8 +81,7 @@ public class QrCodeBot extends TelegramLongPollingBot{
         try {
 
             /* retrieve file inside the jar*/
-            input = new FileInputStream(new File(QrCodeBot.class.getClassLoader().getResource(PROPERTIES_FILE_NAME).getFile()));
-
+            input=QrCodeBot.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);
             // load a properties file
             prop.load(input);
 
