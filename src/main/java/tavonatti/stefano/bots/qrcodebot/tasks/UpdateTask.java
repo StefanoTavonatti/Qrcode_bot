@@ -44,7 +44,7 @@ public class UpdateTask implements Runnable {
     private final static long MAX_USE_NUM=9223372036854775000L;
     private final static String INLINE_IMG_TOCKEN="###";
 
-    private final static int MAX_FILE_SIZE=1024*1024*4;//TODO define
+    private final static int MAX_FILE_SIZE=1024*20;//TODO define
 
     private final static int WIDTH_DM=64;
     private final static int HEIGHT_DM=64;
@@ -586,7 +586,8 @@ public class UpdateTask implements Runnable {
             + "mime: "+document.getMimeType()+"size: "+document.getFileSize());
 
             if(document.getFileSize()>MAX_FILE_SIZE){
-                sendErrorMessage("File to big (MAX:"+MAX_FILE_SIZE +"bytes");
+                sendErrorMessage("File to big ( max "+MAX_FILE_SIZE +" bytes)");
+                return;
             }
 
             GetFile getFile=new GetFile();
@@ -618,8 +619,16 @@ public class UpdateTask implements Runnable {
             String text="";
             char c[]=new char[1];
             try {
-                while (reader.read(c)>-1){
+                int i=0;
+                while (reader.read(c)>-1 && i<MAX_FILE_SIZE){
                     text+=c[0];
+                    i++;
+                }
+
+                if(i>=MAX_FILE_SIZE){
+                    sendErrorMessage("Unable to read the file");
+                    logger.error("Unable to read the file");
+                    return;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
