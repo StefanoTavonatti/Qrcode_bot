@@ -44,6 +44,8 @@ public class UpdateTask implements Runnable {
     private final static long MAX_USE_NUM=9223372036854775000L;
     private final static String INLINE_IMG_TOCKEN="###";
 
+    private final static int MAX_FILE_SIZE=1024*1024*4;//TODO define
+
     private final static int WIDTH_DM=64;
     private final static int HEIGHT_DM=64;
 
@@ -548,6 +550,9 @@ public class UpdateTask implements Runnable {
             }
         }
         else if(update.hasMessage() && update.getMessage().hasLocation()){
+
+            updateChatAndUserInformation();
+
             Location loc=update.getMessage().getLocation();
 
             String text="geo:"+loc.getLatitude()+","+loc.getLongitude();
@@ -571,6 +576,75 @@ public class UpdateTask implements Runnable {
                 sendErrorMessage("Unable to send the photo");
                 return;
             }
+        }
+        else if(update.hasMessage() && update.getMessage().hasDocument()){
+
+            updateChatAndUserInformation();
+
+            Document document=update.getMessage().getDocument();
+            logger.info("Document from: "+update.getMessage().getFrom().getUserName()+" name: "+document.getFileName()
+            + "mime: "+document.getMimeType()+"size: "+document.getFileSize());
+
+            if(document.getFileSize()>MAX_FILE_SIZE){
+                sendErrorMessage("File to big (MAX:"+MAX_FILE_SIZE +"bytes");
+            }
+
+            GetFile getFile=new GetFile();
+            getFile.setFileId(document.getFileId());
+
+            File file;
+            try {
+                file= qrCodeBot.getFile(getFile);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+                logger.error("File "+document.getFileName()+" not found");
+                sendErrorMessage("Unable to download the file");
+                return;
+            }
+
+            InputStream is;
+            try {
+                is=getFileInputStream(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+                logger.error("Unable to get inputstream "+document.getFileName());
+                sendErrorMessage("Unable to download the file");
+                return;
+            }
+
+
+            BufferedReader reader=new BufferedReader(new InputStreamReader(is));
+
+            String text="";
+            char c[]=new char[1];
+            try {
+                while (reader.read(c)>-1){
+                    text+=c[0];
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendErrorMessage("Unable to read the file");
+                logger.error("Unable to read the file"+document.getFileName());
+                return;
+            }
+
+
+            SendPhoto sendPhoto=new SendPhoto();
+            sendPhoto.setChatId(update.getMessage().getChatId());
+
+            InputStream qrInputStream=getQRInputStream(text);
+
+            sendPhoto.setNewPhoto("QRCode",qrInputStream);
+
+            try {
+                qrCodeBot.sendPhoto(sendPhoto);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+                sendErrorMessage("Unable to send the QRCode");
+                return;
+            }
+
+
         }
 
     }
