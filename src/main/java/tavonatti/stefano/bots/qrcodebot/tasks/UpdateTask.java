@@ -329,8 +329,10 @@ public class UpdateTask implements Runnable {
                     return;
 
                 default:
-                    message.setText("Type /help for the list of available commands");
-                    qrCodeBot.sendResponse(message);
+                    if(update.getMessage().isUserMessage()) {
+                        message.setText("Type /help for the list of available commands");
+                        qrCodeBot.sendResponse(message);
+                    }
                     break;
             }
 
