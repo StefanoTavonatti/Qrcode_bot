@@ -8,6 +8,7 @@ import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.datamatrix.DataMatrixWriter;
 import com.google.zxing.datamatrix.encoder.SymbolShapeHint;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.vdurmont.emoji.EmojiParser;
 import org.apache.log4j.Logger;
 import org.telegram.telegrambots.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.api.methods.GetFile;
@@ -92,8 +93,7 @@ public class UpdateTask implements Runnable {
                         User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
 
                         if(u==null){
-                            getHelpMessage(message);
-                            qrCodeBot.sendResponse(message);
+                            sendHelpMessage();
                             return;
                         }
 
@@ -169,9 +169,9 @@ public class UpdateTask implements Runnable {
                         return;
                     }
                     //break;
+                case "/instruction":
                 case "/help":
-                    getHelpMessage(message);
-                    qrCodeBot.sendResponse(message);
+                    sendHelpMessage();
                     break;
                 case "/encode":
                     if(splits.length<2){
@@ -766,11 +766,54 @@ public class UpdateTask implements Runnable {
 
     }
 
-    private void getHelpMessage(SendMessage message) {
-        String helpText="/encode <text>: encode the <text> inside a QRCode\n"+
-                "send a photo with a QrCode in order to decode it.";
+    private void sendHelpMessage() {
+        String helpText="- Write /encode <text>: the bot will encode the <text> inside a QRCode!\n"+
+                "- Write /encode_wifi <SSID> <WPA|WEP> <password>: the bot will encode the wifi credentials!\n" +
+                "- Write /encode_wifi <SSID> <password> for WPA network!\n";
 
-        message.setText(helpText);
+        String text2="- Click :paperclip: and send a *photo* with a QrCode: the bot will decode it!\n" +
+                "- Write a *Location* or a *Contact*: the bot will encode it in a QR code!";
+
+        String text3="- Write /help or /instruction to see the commands again! :yum:";
+
+        SendMessage message=new SendMessage();
+        message.setChatId(update.getMessage().getChatId());
+        //message.enableMarkdown(true);
+        message.setText(EmojiParser.parseToUnicode(helpText));
+
+
+
+        SendMessage message1=new SendMessage();
+        message1.setChatId(update.getMessage().getChatId());
+        message1.enableMarkdown(true);
+        message1.setText(EmojiParser.parseToUnicode(text2));
+
+        SendMessage message2=new SendMessage();
+        message2.setChatId(update.getMessage().getChatId());
+        message2.enableMarkdown(true);
+        message2.setText(EmojiParser.parseToUnicode(text3));
+
+        qrCodeBot.sendResponse(message1);
+        qrCodeBot.sendResponse(message);
+        qrCodeBot.sendResponse(message2);
+
+        SendMessage enjoyMessage=new SendMessage();
+        enjoyMessage.setChatId(update.getMessage().getChatId());
+        enjoyMessage.setText(EmojiParser.parseToUnicode("Enjoy! :grin:"));
+
+        qrCodeBot.sendResponse(enjoyMessage);
+
+        /*SendPhoto sendPhoto=new SendPhoto();
+        sendPhoto.setChatId(update.getMessage().getChatId());
+
+        sendPhoto.setNewPhoto("sendQr",getClass().getClassLoader().getResourceAsStream("img/sendQr.png"));
+
+        try {
+            qrCodeBot.sendPhoto(sendPhoto);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+            logger.error("Unable to send the photo");
+        }*/
     }
 
     private InputStream getQRInputStream(String text) {
