@@ -771,8 +771,10 @@ public class UpdateTask implements Runnable {
                 "- Write /encode_wifi <SSID> <WPA|WEP> <password>: the bot will encode the wifi credentials!\n" +
                 "- Write /encode_wifi <SSID> <password> for WPA network!\n";
 
-        String text2="- Click :paperclip: and send a *photo* with a QrCode: the bot will decode it!\n" +
-                "- Write a *Location* or a *Contact*: the bot will encode it in a QR code!";
+        String text2="- Click :paperclip: and send a *photo* with a QRCode: the bot will decode it!\n" +
+                "- Send a *Location* or a *Contact*: the bot will encode it in a QRCode!\n" +
+                "- Use the bot also in chats: write @"+qrCodeBot.getBotUsername().replace("_","\\_")+" <text> to send " +
+                "your friends a QRCoded message! (inline mode)";
 
         String text3="- Write /help or /instruction to see the commands again! :yum:";
 
