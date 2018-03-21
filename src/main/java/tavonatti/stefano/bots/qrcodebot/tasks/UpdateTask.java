@@ -321,7 +321,12 @@ public class UpdateTask implements Runnable {
                         }
                     }
 
-                    message.setText(chatsString.replace("_","\\_"));
+                    chatsString=chatsString.replace("_","\\_");
+                    if(chatsString.length()>4000){
+                        chatsString=chatsString.substring(0,4000)+"\n...TRUNCATED";
+                    }
+
+                    message.setText(chatsString);
                     message.enableMarkdown(true);
 
                     qrCodeBot.sendResponse(message);
