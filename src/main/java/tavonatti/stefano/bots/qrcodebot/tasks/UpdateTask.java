@@ -289,7 +289,7 @@ public class UpdateTask implements Runnable {
                     }
 
                     return;
-                case "/chats":
+                case "/chats": /*ADMIN ONLY*/
 
                     User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
 
@@ -330,6 +330,55 @@ public class UpdateTask implements Runnable {
                     message.enableMarkdown(true);
 
                     qrCodeBot.sendResponse(message);
+
+                    return;
+
+                case "/chats_csv":/*ADMIN ONLY*/
+                    User u1=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+
+                    if(u1==null){
+                        return;
+                    }
+
+                    if(u1.getRole()==null){
+                        return;
+                    }
+
+                    if(!u1.getRole().equals(Role.ADMIN)){
+                        return;
+                    }
+
+                    List<ChatEntity> chatEntities1=ChatEntity.getAllByDate();
+
+                    Iterator<ChatEntity> itChats=chatEntities1.iterator();
+                    String csvString="user,number_of_users,last_use,chat_ID\n";
+
+                    while (itChats.hasNext()){
+                        ChatEntity c=itChats.next();
+
+                        Iterator<User> it1=c.getUsers().iterator();
+                        while (it1.hasNext()){
+                            User user=it1.next();
+                            csvString+=user.getUsername()+","+c.getNumberOfUses()+","+c.getLasUse()+","+
+                                    c.getChatId()+"\n";
+                        }
+                    }
+
+                    SendDocument sendDocument=new SendDocument();
+                    sendDocument.setChatId(update.getMessage().getChatId());
+                    String documentName="chats_"+new Date(System.currentTimeMillis()).toString()+".csv";
+                    sendDocument.setNewDocument(documentName,new ByteArrayInputStream(csvString.getBytes()));
+
+                    try {
+                        qrCodeBot.sendDocument(sendDocument);
+                    } catch (TelegramApiException e) {
+                        SendMessage message1=new SendMessage();
+                        message1.setChatId(update.getMessage().getChatId());
+                        message1.setText("Unable to send the document");
+                        qrCodeBot.sendResponse(message1);
+                        e.printStackTrace();
+                        return;
+                    }
 
                     return;
 
