@@ -15,6 +15,10 @@
 
         <bot.username>${env.QRCODEBOT_USERNAME}</bot.username>
         <bot.tocken>${env.QRCODEBOT_TOCKEN}</bot.tocken>
+
+        <bot.donations_enabled>true</bot.donations_enabled>
+        <bot.donations_link>${env.QRCODEBOT_DONATION_LINK}</bot.donations_link>
+
         <db.username>${env.DB_USERNAME_QRCODEBOT}</db.username>
         <db.password>${env.DB_PASSWORD_QRCODEBOT}</db.password>
         <db.url>${env.DB_URL_QRCODEBOT}</db.url>

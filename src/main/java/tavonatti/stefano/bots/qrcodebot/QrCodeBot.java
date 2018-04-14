@@ -21,6 +21,10 @@ public class QrCodeBot extends TelegramLongPollingBot{
     private String username;
     private String token;
     private boolean dbLogging=false;
+
+    private boolean donationEnabled=false;
+    private String donationsLink="";
+
     private ThreadPoolExecutor executor;
 
     public QrCodeBot(){
@@ -89,6 +93,19 @@ public class QrCodeBot extends TelegramLongPollingBot{
             username=prop.getProperty("username");
             token=prop.getProperty("token");
             dbLogging=Boolean.parseBoolean(prop.getProperty("db-logging","false"));
+            donationEnabled=Boolean.parseBoolean(prop.getProperty("donations_enabled"));
+            donationsLink=prop.getProperty("donations_link");
+
+            if(donationEnabled){
+                if (logger.isInfoEnabled()){
+                    logger.info("Donations enabled, link: "+donationsLink);
+                }
+            }
+            else {
+                if(logger.isInfoEnabled()){
+                    logger.info("Donations disabled");
+                }
+            }
 
         } catch (IOException ex) {
             ex.printStackTrace();
