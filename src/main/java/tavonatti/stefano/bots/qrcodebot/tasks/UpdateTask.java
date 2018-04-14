@@ -832,6 +832,8 @@ public class UpdateTask implements Runnable {
 
         String text3="- Write /help or /instruction to see the commands again! :yum:";
 
+        String donationsText=":blue_heart: - Do you like the bot? Offer me a coffee :coffee:, this is my paypal link: "+qrCodeBot.getDonationsLink();
+
         SendMessage message=new SendMessage();
         message.setChatId(update.getMessage().getChatId());
         //message.enableMarkdown(true);
@@ -852,6 +854,14 @@ public class UpdateTask implements Runnable {
         qrCodeBot.sendResponse(message1);
         qrCodeBot.sendResponse(message);
         qrCodeBot.sendResponse(message2);
+
+        if(qrCodeBot.isDonationEnabled()){
+            SendMessage donationMessage=new SendMessage();
+            donationMessage.setChatId(update.getMessage().getChatId());
+            donationMessage.setText(EmojiParser.parseToUnicode(donationsText));
+
+            qrCodeBot.sendResponse(donationMessage);
+        }
 
         SendMessage enjoyMessage=new SendMessage();
         enjoyMessage.setChatId(update.getMessage().getChatId());

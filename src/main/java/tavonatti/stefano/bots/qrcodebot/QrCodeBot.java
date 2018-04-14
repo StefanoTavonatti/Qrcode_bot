@@ -93,12 +93,12 @@ public class QrCodeBot extends TelegramLongPollingBot{
             username=prop.getProperty("username");
             token=prop.getProperty("token");
             dbLogging=Boolean.parseBoolean(prop.getProperty("db-logging","false"));
-            donationEnabled=Boolean.parseBoolean(prop.getProperty("donations_enabled"));
-            donationsLink=prop.getProperty("donations_link");
+            setDonationEnabled(Boolean.parseBoolean(prop.getProperty("donations_enabled")));
+            setDonationsLink(prop.getProperty("donations_link"));
 
-            if(donationEnabled){
+            if(isDonationEnabled()){
                 if (logger.isInfoEnabled()){
-                    logger.info("Donations enabled, link: "+donationsLink);
+                    logger.info("Donations enabled, link: "+ getDonationsLink());
                 }
             }
             else {
@@ -148,5 +148,21 @@ public class QrCodeBot extends TelegramLongPollingBot{
 
     public boolean dbLoggingEnabled(){
         return dbLogging;
+    }
+
+    public boolean isDonationEnabled() {
+        return donationEnabled;
+    }
+
+    public void setDonationEnabled(boolean donationEnabled) {
+        this.donationEnabled = donationEnabled;
+    }
+
+    public String getDonationsLink() {
+        return donationsLink;
+    }
+
+    public void setDonationsLink(String donationsLink) {
+        this.donationsLink = donationsLink;
     }
 }
