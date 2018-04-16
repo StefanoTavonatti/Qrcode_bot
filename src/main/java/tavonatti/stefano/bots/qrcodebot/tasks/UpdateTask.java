@@ -202,6 +202,7 @@ public class UpdateTask implements Runnable {
 
                     try {
                         qrCodeBot.sendPhoto(sendPhoto);
+                        sendDonationMessage();
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
@@ -242,6 +243,7 @@ public class UpdateTask implements Runnable {
 
                     try {
                         qrCodeBot.sendPhoto(sendPhotoWIFI);
+                        sendDonationMessage();
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
@@ -288,6 +290,12 @@ public class UpdateTask implements Runnable {
                         e.printStackTrace();
                     }
 
+                    return;
+                case "/coffee":
+                    SendMessage coffeeMessage=new SendMessage();
+                    coffeeMessage.setChatId(update.getMessage().getChatId());
+                    coffeeMessage.setText(EmojiParser.parseToUnicode(getDonationsText()));
+                    qrCodeBot.sendResponse(coffeeMessage);
                     return;
                 case "/chats": /*ADMIN ONLY*/
 
@@ -474,11 +482,18 @@ public class UpdateTask implements Runnable {
                 /* if the QRcode contains a vCard, send the contac*/
                 if(text.startsWith("BEGIN:VCARD")){
 
-                    if (decodeAndSendContact(message, text)) return;
+                    if (decodeAndSendContact(message, text)){
+                        sendDonationMessage();
+                        return;
+                    }
+
+
 
                 }
                 else if(text.startsWith("geo:")|| text.startsWith("GEO:")){
                     if (decodeAndSendLocation(text)) return;
+
+                    sendDonationMessage();
 
                     return;
 
@@ -497,6 +512,7 @@ public class UpdateTask implements Runnable {
             }
 
             qrCodeBot.sendResponse(message);
+            sendDonationMessage();
 
         }
         else if(update.hasInlineQuery() && qrCodeBot.dbLoggingEnabled()){
@@ -599,6 +615,7 @@ public class UpdateTask implements Runnable {
 
             try {
                 qrCodeBot.sendPhoto(sendPhoto);
+                sendDonationMessage();
             } catch (TelegramApiException e) {
                 e.printStackTrace();
                 sendErrorMessage("Unable to encode");
@@ -627,6 +644,7 @@ public class UpdateTask implements Runnable {
 
             try {
                 qrCodeBot.sendPhoto(sendPhoto);
+                sendDonationMessage();
             } catch (TelegramApiException e) {
                 e.printStackTrace();
                 sendErrorMessage("Unable to send the photo");
@@ -703,6 +721,7 @@ public class UpdateTask implements Runnable {
 
             try {
                 qrCodeBot.sendPhoto(sendPhoto);
+                sendDonationMessage();
             } catch (TelegramApiException e) {
                 e.printStackTrace();
                 sendErrorMessage("Unable to send the QRCode");
@@ -710,6 +729,35 @@ public class UpdateTask implements Runnable {
             }
 
 
+        }
+
+    }
+
+    private void sendDonationMessage(){
+        if(!update.hasMessage())
+            return;
+
+        if(!qrCodeBot.isDonationEnabled())
+            return;
+
+        User u=User.getById(Long.valueOf(update.getMessage().getFrom().getId()));
+        if(u==null)
+            return;
+
+        ChatEntity c=ChatEntity.getById(update.getMessage().getChatId());
+        if(c==null)
+            return;
+
+        logger.info("Number of uses: "+c.getNumberOfUses());
+
+        if(c.getNumberOfUses()%10==0) {
+
+
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(update.getMessage().getChatId());
+            sendMessage.setText(EmojiParser.parseToUnicode(getDonationsText()));
+
+            qrCodeBot.sendResponse(sendMessage);
         }
 
     }
@@ -832,7 +880,7 @@ public class UpdateTask implements Runnable {
 
         String text3="- Write /help or /instruction to see the commands again! :yum:";
 
-        String donationsText=":blue_heart: - Do you like the bot? Offer me a coffee :coffee:, this is my paypal link: "+qrCodeBot.getDonationsLink();
+        String donationsText= getDonationsText();
 
         SendMessage message=new SendMessage();
         message.setChatId(update.getMessage().getChatId());
@@ -880,6 +928,10 @@ public class UpdateTask implements Runnable {
             e.printStackTrace();
             logger.error("Unable to send the photo");
         }*/
+    }
+
+    private String getDonationsText() {
+        return ":blue_heart: - Do you like the bot? Offer me a coffee:coffee:! This is my paypal link: "+qrCodeBot.getDonationsLink();
     }
 
     private InputStream getQRInputStream(String text) {
