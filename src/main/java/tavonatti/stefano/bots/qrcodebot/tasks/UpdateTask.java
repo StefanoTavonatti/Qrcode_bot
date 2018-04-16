@@ -876,11 +876,12 @@ public class UpdateTask implements Runnable {
         String text2="- Click :paperclip: and send a *photo* with a QRCode: the bot will decode it!\n" +
                 "- Send a *Location* or a *Contact*: the bot will encode it in a QRCode!\n" +
                 "- Use the bot also in chats: write @"+qrCodeBot.getBotUsername().replace("_","\\_")+" <text> to send " +
-                "your friends a QRCoded message! (inline mode)";
+                "your friends a QRCoded message! (inline mode)\n"+
+                "- Write /help or /instruction to see the commands again! :yum:";
 
-        String text3="- Write /help or /instruction to see the commands again! :yum:";
+        String text3="";
 
-        String donationsText= getDonationsText();
+        String donationsText="Donation link: "+qrCodeBot.getDonationsLink();
 
         SendMessage message=new SendMessage();
         message.setChatId(update.getMessage().getChatId());
@@ -901,7 +902,7 @@ public class UpdateTask implements Runnable {
 
         qrCodeBot.sendResponse(message1);
         qrCodeBot.sendResponse(message);
-        qrCodeBot.sendResponse(message2);
+        //qrCodeBot.sendResponse(message2);
 
         if(qrCodeBot.isDonationEnabled()){
             SendMessage donationMessage=new SendMessage();
