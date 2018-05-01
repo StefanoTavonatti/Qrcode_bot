@@ -757,6 +757,11 @@ public class UpdateTask implements Runnable {
             sendMessage.setChatId(update.getMessage().getChatId());
             sendMessage.setText(EmojiParser.parseToUnicode(getDonationsText()));
 
+            try {
+                Thread.sleep(Long.parseLong("2000"));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             qrCodeBot.sendResponse(sendMessage);
         }
 
