@@ -876,7 +876,8 @@ public class UpdateTask implements Runnable {
     private void sendHelpMessage() {
         String helpText="- Write /encode <text>: the bot will encode the <text> inside a QRCode!\n"+
                 "- Write /encode_wifi <SSID> <WPA|WEP> <password>: the bot will encode the wifi credentials!\n" +
-                "- Write /encode_wifi <SSID> <password> for WPA network!\n";
+                "- Write /encode_wifi <SSID> <password> for WPA network!\n"+
+                "- Write /coffee to offer me a coffee";
 
         String text2="- Click :paperclip: and send a *photo* with a QRCode: the bot will decode it!\n" +
                 "- Send a *Location* or a *Contact*: the bot will encode it in a QRCode!\n" +
